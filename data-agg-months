@@ -1,0 +1,89 @@
+library(ggplot2)
+library(GGally)
+library(dplyr)
+library(ggthemes)
+
+txdot <- read.csv('data/updated_limited_clean_txdot_dataset (1).csv')
+
+
+inj <- read.csv('data/intersection_dataset (1).csv')
+inj$Injury_prone <- inj$CrashSeverity_Binary_INJURED_mean >= 0.5
+inj_prone <- inj[, c('IntersectionID', 'Injury_prone')]
+
+df <- merge(inj_prone, txdot, by='IntersectionID') %>%
+  filter(transit_n_trips > 0)
+
+
+number_roads_plt <- ggplot(df) + geom_bar(aes(x=NumberofEnteringRoads, fill=Injury_prone), stat = "count",
+         position = "fill") +
+  coord_flip() +
+  ylab("Percent") +
+  xlab("Number of Roads") +
+  scale_x_discrete(limits=rev(c("Three Entering Roads - T",
+                            "Four Entering Roads",
+                            "Three Entering Roads - Y",
+                            "Six Entering Roads",
+                            "Cloverleaf",
+                            "Traffic Circle"))) +
+  scale_fill_fivethirtyeight(name="Injury Prone") +
+  theme_fivethirtyeight() +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
+
+
+traffic_control_plt <- ggplot(df) + geom_bar(aes(x=TrafficControlType, fill=Injury_prone), stat = "count",
+                      position = "fill") +
+  coord_flip() +
+  ylab("Percent") +
+  xlab("Traffic Control") +
+  scale_x_discrete(limits=rev(c("Flagman",
+                            "Crosswalk",
+                            "Bike Lane",
+                            "Warning Sign",
+                            "Officer",
+                            "No Passing Zone",
+                            "Stop Sign",
+                            "Marked Lanes",
+                            "None"))) +
+  scale_fill_fivethirtyeight(name="Injury Prone") +
+  theme_fivethirtyeight()+
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
+
+
+road_class_plt <- ggplot(df) + geom_bar(aes(x=RoadClass, fill=Injury_prone), stat = "count",
+                      position = "fill") +
+  ylab("Percent") +
+  xlab("Road Class") +
+  coord_flip() +
+  scale_x_discrete(limits=rev(c("Toll Bridges",
+                            "City Street",
+                            "US & State Highways",
+                            "Farm To Market",
+                            "County Road",
+                            "Interstate",
+                            "Tollway"))) +
+  scale_fill_fivethirtyeight(name="Injury Prone") +
+  theme_fivethirtyeight()+
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
+
+
+df$SpeedLimitCat <- "Below 30"
+df$SpeedLimitCat[df$SpeedLimit >= 30] <- "30 to 60"
+df$SpeedLimitCat[df$SpeedLimit >= 60] <- "60 and Above"
+
+speed_limit_plt <- ggplot(df) + geom_bar(aes(x=SpeedLimitCat, fill=Injury_prone), stat = "count",
+                      position = "fill") +
+  coord_flip() +
+  xlab("Speed Limit") +
+  ylab("Percent") +
+  scale_x_discrete(limits=rev(c("30 to 60",
+                            "Below 30",
+                            "60 and Above")))+
+  scale_fill_fivethirtyeight(name="Injury Prone") +
+  theme_fivethirtyeight()+
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
+
+
+ggsave('speed_limit_plt.png', speed_limit_plt)
+ggsave('road_class_plt.png', road_class_plt)
+ggsave('traffic_control_plt.png', traffic_control_plt)
+ggsave('number_roads_plt.png', number_roads_plt)
